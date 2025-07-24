@@ -46,7 +46,7 @@ app.use((req, res, next) => {
   // Generate sample data for development
   if (process.env.NODE_ENV === "development") {
     try {
-      generateSampleData();
+      // generateSampleData();
       log("Sample data initialized for development");
     } catch (error) {
       log(
