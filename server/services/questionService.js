@@ -7,7 +7,10 @@ dotenv.config();
 // Initialize OpenAI client conditionally
 let openai = null;
 
-console.log("open ai key", process.env.OPENAI_API_KEY ? "provided" : "not provided");
+console.log(
+  "open ai key",
+  process.env.OPENAI_API_KEY ? "provided" : "not provided"
+);
 
 if (process.env.OPENAI_API_KEY) {
   try {
@@ -135,33 +138,42 @@ const staticQuestions = {
 
   Retail: [
     {
-      type: "multiple_choice",
-      question: "How often do you shop online?",
-      options: ["Daily", "Weekly", "Monthly", "Rarely", "Never"],
+      type: "Single_choice",
+      question:
+        "How appealing do you find this new product based on the description/images you saw?",
+      options: [
+        "Extremely appealing",
+        "Very appealing",
+        "Somewhat appealing",
+        "Not so appealing",
+        "Not at all appealing",
+      ],
       required: true,
     },
     {
       type: "multiple_choice",
-      question: "What factors influence your purchasing decisions most?",
-      options: ["Price", "Quality", "Brand", "Reviews", "Convenience"],
-      required: true,
-    },
-    {
-      type: "rating",
-      question: "Rate your satisfaction with customer service (1-5)",
-      options: ["1", "2", "3", "4", "5"],
+      question: "What features stood out to you the most?",
+      options: [
+        "Design/appearance",
+        "Pricing",
+        "Functionality",
+        "Brand reputation",
+        "Sustainability",
+        "None of these",
+      ],
       required: true,
     },
     {
       type: "text",
-      question: "What would improve your shopping experience?",
+      question: "What would make you more likely to try or buy this product?",
       options: [],
       required: false,
     },
     {
-      type: "yes_no",
-      question: "Do you prefer shopping online or in-store?",
-      options: ["Online", "In-store"],
+      type: "rating",
+      question:
+        "How likely are you to recommend this product to a friend or colleague?",
+      options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
       required: true,
     },
   ],
@@ -169,44 +181,26 @@ const staticQuestions = {
   Finance: [
     {
       type: "multiple_choice",
-      question: "How confident are you in your financial planning?",
+      question: "Overall, how satisfied are you with your experience with us?",
       options: [
-        "Very Confident",
-        "Confident",
+        "Very satisfied",
+        "Somewhat satisfied",
         "Neutral",
-        "Not Confident",
-        "Very Unsure",
-      ],
-      required: true,
-    },
-    {
-      type: "multiple_choice",
-      question: "What is your primary financial goal?",
-      options: [
-        "Saving for Retirement",
-        "Buying a Home",
-        "Emergency Fund",
-        "Investment Growth",
-        "Debt Reduction",
+        "Somewhat dissatisfied",
+        "Very dissatisfied",
       ],
       required: true,
     },
     {
       type: "rating",
-      question: "Rate your satisfaction with banking services (1-5)",
-      options: ["1", "2", "3", "4", "5"],
+      question: "How likely are you to recommend us to a friend or colleague?",
+      options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
       required: true,
     },
     {
       type: "text",
-      question: "What financial services do you need most?",
+      question: "What is one thing we could do to improve your experience?",
       options: [],
-      required: false,
-    },
-    {
-      type: "yes_no",
-      question: "Do you use mobile banking regularly?",
-      options: ["Yes", "No"],
       required: true,
     },
   ],
@@ -337,7 +331,10 @@ function getAvailableCategories() {
 async function testOpenAIConnection() {
   try {
     if (!openai) {
-      return { connected: false, error: "OpenAI client not initialized - API key missing" };
+      return {
+        connected: false,
+        error: "OpenAI client not initialized - API key missing",
+      };
     }
 
     const response = await openai.chat.completions.create({
