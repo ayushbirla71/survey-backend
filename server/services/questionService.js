@@ -1,0 +1,351 @@
+import OpenAI from "openai";
+import config from "../config.js";
+
+import dotenv from "dotenv";
+dotenv.config();
+
+// Initialize OpenAI client
+
+console.log("open ai key", process.env.OPENAI_API_KEY);
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
+
+// Static question templates by category
+const staticQuestions = {
+  "IT Sector": [
+    {
+      type: "multiple_choice",
+      question: "How satisfied are you with your current role?",
+      options: [
+        "Very Satisfied",
+        "Satisfied",
+        "Neutral",
+        "Dissatisfied",
+        "Very Dissatisfied",
+      ],
+      required: true,
+    },
+    {
+      type: "multiple_choice",
+      question: "What is your primary programming language?",
+      options: ["JavaScript", "Python", "Java", "C#", "PHP", "Other"],
+      required: false,
+    },
+    {
+      type: "rating",
+      question: "Rate your work-life balance (1-5)",
+      options: ["1", "2", "3", "4", "5"],
+      required: true,
+    },
+    {
+      type: "text",
+      question: "What technologies would you like to learn next?",
+      options: [],
+      required: false,
+    },
+    {
+      type: "yes_no",
+      question: "Would you recommend your company to others?",
+      options: ["Yes", "No"],
+      required: true,
+    },
+  ],
+
+  Healthcare: [
+    {
+      type: "multiple_choice",
+      question: "How would you rate the quality of healthcare services?",
+      options: ["Excellent", "Good", "Fair", "Poor", "Very Poor"],
+      required: true,
+    },
+    {
+      type: "multiple_choice",
+      question: "What is your primary concern about healthcare?",
+      options: ["Cost", "Access", "Quality", "Wait Times", "Communication"],
+      required: true,
+    },
+    {
+      type: "rating",
+      question:
+        "Rate your overall satisfaction with healthcare providers (1-5)",
+      options: ["1", "2", "3", "4", "5"],
+      required: true,
+    },
+    {
+      type: "text",
+      question: "What improvements would you suggest for healthcare services?",
+      options: [],
+      required: false,
+    },
+    {
+      type: "yes_no",
+      question: "Do you have health insurance?",
+      options: ["Yes", "No"],
+      required: true,
+    },
+  ],
+
+  Education: [
+    {
+      type: "multiple_choice",
+      question: "How would you rate the quality of education?",
+      options: ["Excellent", "Good", "Fair", "Poor", "Very Poor"],
+      required: true,
+    },
+    {
+      type: "multiple_choice",
+      question: "What is most important in education?",
+      options: [
+        "Practical Skills",
+        "Theoretical Knowledge",
+        "Critical Thinking",
+        "Creativity",
+        "Communication",
+      ],
+      required: true,
+    },
+    {
+      type: "rating",
+      question: "Rate the effectiveness of online learning (1-5)",
+      options: ["1", "2", "3", "4", "5"],
+      required: true,
+    },
+    {
+      type: "text",
+      question: "What subjects should be given more emphasis?",
+      options: [],
+      required: false,
+    },
+    {
+      type: "yes_no",
+      question: "Should technology play a bigger role in education?",
+      options: ["Yes", "No"],
+      required: true,
+    },
+  ],
+
+  Retail: [
+    {
+      type: "multiple_choice",
+      question: "How often do you shop online?",
+      options: ["Daily", "Weekly", "Monthly", "Rarely", "Never"],
+      required: true,
+    },
+    {
+      type: "multiple_choice",
+      question: "What factors influence your purchasing decisions most?",
+      options: ["Price", "Quality", "Brand", "Reviews", "Convenience"],
+      required: true,
+    },
+    {
+      type: "rating",
+      question: "Rate your satisfaction with customer service (1-5)",
+      options: ["1", "2", "3", "4", "5"],
+      required: true,
+    },
+    {
+      type: "text",
+      question: "What would improve your shopping experience?",
+      options: [],
+      required: false,
+    },
+    {
+      type: "yes_no",
+      question: "Do you prefer shopping online or in-store?",
+      options: ["Online", "In-store"],
+      required: true,
+    },
+  ],
+
+  Finance: [
+    {
+      type: "multiple_choice",
+      question: "How confident are you in your financial planning?",
+      options: [
+        "Very Confident",
+        "Confident",
+        "Neutral",
+        "Not Confident",
+        "Very Unsure",
+      ],
+      required: true,
+    },
+    {
+      type: "multiple_choice",
+      question: "What is your primary financial goal?",
+      options: [
+        "Saving for Retirement",
+        "Buying a Home",
+        "Emergency Fund",
+        "Investment Growth",
+        "Debt Reduction",
+      ],
+      required: true,
+    },
+    {
+      type: "rating",
+      question: "Rate your satisfaction with banking services (1-5)",
+      options: ["1", "2", "3", "4", "5"],
+      required: true,
+    },
+    {
+      type: "text",
+      question: "What financial services do you need most?",
+      options: [],
+      required: false,
+    },
+    {
+      type: "yes_no",
+      question: "Do you use mobile banking regularly?",
+      options: ["Yes", "No"],
+      required: true,
+    },
+  ],
+};
+
+// Generate questions using OpenAI
+async function generateQuestionsWithAI(
+  category,
+  description,
+  questionCount = 5
+) {
+  try {
+    const prompt = `Generate ${questionCount} survey questions for the "${category}" category.
+    
+Additional context: ${description || "No additional context provided"}
+
+Requirements:
+- Create diverse question types: multiple_choice, text, rating, yes_no
+- For multiple_choice questions, provide 3-5 relevant options
+- For rating questions, use 1-5 scale with options ['1', '2', '3', '4', '5']
+- For yes_no questions, use options ['Yes', 'No']
+- For text questions, use empty options array []
+- Make questions relevant to the category and context
+- Mix required (true) and optional (false) questions
+- Ensure questions are professional and unbiased
+
+Respond with a JSON array of question objects in this exact format:
+[
+  {
+    "type": "multiple_choice",
+    "question": "Question text here?",
+    "options": ["Option 1", "Option 2", "Option 3"],
+    "required": true
+  }
+]`;
+
+    const response = await openai.chat.completions.create({
+      model: config.questionGeneration.openai.model,
+      messages: [
+        {
+          role: "system",
+          content:
+            "You are an expert survey designer. Generate professional, unbiased survey questions in valid JSON format only. Do not include any explanatory text outside the JSON.",
+        },
+        {
+          role: "user",
+          content: prompt,
+        },
+      ],
+      temperature: config.questionGeneration.openai.temperature,
+      max_tokens: 2000,
+      response_format: { type: "json_object" },
+    });
+
+    const content = response.choices[0].message.content;
+
+    // Try to parse the JSON response
+    let questions;
+    try {
+      // The response might be wrapped in a JSON object with a questions array
+      const parsed = JSON.parse(content);
+      questions = parsed.questions || parsed;
+    } catch (parseError) {
+      // If parsing fails, try to extract JSON array from the content
+      const jsonMatch = content.match(/\[.*\]/s);
+      if (jsonMatch) {
+        questions = JSON.parse(jsonMatch[0]);
+      } else {
+        throw new Error("Failed to parse OpenAI response");
+      }
+    }
+
+    // Validate and format questions
+    const formattedQuestions = questions.map((q, index) => ({
+      id: `ai_q${index + 1}`,
+      type: q.type || "text",
+      question: q.question || "Generated question",
+      options: Array.isArray(q.options) ? q.options : [],
+      required: typeof q.required === "boolean" ? q.required : true,
+    }));
+
+    return formattedQuestions;
+  } catch (error) {
+    console.error("Error generating questions with AI:", error);
+
+    // Fallback to static questions if AI generation fails
+    console.log("Falling back to static questions for category:", category);
+    return getStaticQuestions(category);
+  }
+}
+
+// Get static questions for a category
+function getStaticQuestions(category) {
+  const questions = staticQuestions[category] || staticQuestions["IT Sector"];
+
+  return questions.map((q, index) => ({
+    id: `static_q${index + 1}`,
+    ...q,
+  }));
+}
+
+// Main function to generate questions based on configuration
+async function generateQuestions(
+  category,
+  description = "",
+  questionCount = 5
+) {
+  const mode = config.questionGeneration.mode;
+
+  if (mode === "openai" && process.env.OPENAI_API_KEY) {
+    console.log(`Generating questions with AI for category: ${category}`);
+    return await generateQuestionsWithAI(category, description, questionCount);
+  } else {
+    console.log(`Using static questions for category: ${category}`);
+    return getStaticQuestions(category);
+  }
+}
+
+// Get available categories
+function getAvailableCategories() {
+  return Object.keys(staticQuestions);
+}
+
+// Test OpenAI connection
+async function testOpenAIConnection() {
+  try {
+    if (!process.env.OPENAI_API_KEY) {
+      return { connected: false, error: "No API key provided" };
+    }
+
+    const response = await openai.chat.completions.create({
+      model: "gpt-3.5-turbo",
+      messages: [{ role: "user", content: "Test connection" }],
+      max_tokens: 5,
+    });
+
+    return { connected: true, model: response.model };
+  } catch (error) {
+    return { connected: false, error: error.message };
+  }
+}
+
+export {
+  generateQuestions,
+  getStaticQuestions,
+  generateQuestionsWithAI,
+  getAvailableCategories,
+  testOpenAIConnection,
+  staticQuestions,
+};

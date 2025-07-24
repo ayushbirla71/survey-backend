@@ -1,0 +1,660 @@
+# Survey Platform Backend API Documentation
+
+## Base URL
+http://localhost:8000
+
+## Authentication
+All API endpoints require authentication. Include the following header:
+Authorization: Bearer <your_jwt_token>
+
+## Response Format
+All API responses follow this format:
+
+### Success Response
+{
+  "success": true,
+  "data": <response_data>,
+  "message": "Optional success message"
+}
+
+### Error Response
+{
+  "success": false,
+  "error": "Error message",
+  "code": "ERROR_CODE"
+}
+
+### Paginated Response
+{
+  "success": true,
+  "data": [<array_of_items>],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 100,
+    "totalPages": 10
+  }
+}
+
+## API Endpoints
+
+### 1. Dashboard APIs
+
+#### GET /api/dashboard/stats
+Get dashboard statistics
+
+Response:
+{
+  "success": true,
+  "data": {
+    "totalSurveys": 24,
+    "surveyGrowth": 12,
+    "totalResponses": 1842,
+    "responseGrowth": 8,
+    "completionRate": 76,
+    "completionRateGrowth": 3,
+    "avgResponseTime": 4.2,
+    "responseTimeImprovement": 12
+  }
+}
+
+#### GET /api/dashboard/charts
+Get dashboard chart data
+
+Response:
+{
+  "success": true,
+  "data": {
+    "barChart": [
+      { "category": "IT Sector", "responses": 320 },
+      { "category": "Automotive", "responses": 240 }
+    ],
+    "lineChart": [
+      { "month": "Jan", "surveys": 10, "responses": 320 },
+      { "month": "Feb", "surveys": 12, "responses": 380 }
+    ],
+    "pieChart": [
+      { "category": "IT Sector", "value": 32 },
+      { "category": "Automotive", "value": 24 }
+    ]
+  }
+}
+
+#### GET /api/dashboard/recent-surveys
+Get recent surveys for dashboard
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "survey-1",
+      "title": "IT Professional Work Satisfaction",
+      "category": "IT Sector",
+      "responses": 320,
+      "target": 500,
+      "completionRate": 76,
+      "createdAt": "2023-06-15",
+      "status": "active"
+    }
+  ]
+}
+
+### 2. Survey APIs
+
+#### GET /api/surveys
+Get all surveys with pagination and filtering
+
+Query Parameters:
+- page: number (default: 1)
+- limit: number (default: 10)
+- search: string (optional)
+- status: string (active|completed|draft) (optional)
+- category: string (optional)
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "survey-1",
+      "title": "IT Professional Work Satisfaction",
+      "category": "IT Sector",
+      "status": "active",
+      "responses": 320,
+      "target": 500,
+      "completionRate": 76,
+      "createdAt": "2023-06-15",
+      "updatedAt": "2023-06-20"
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 24,
+    "totalPages": 3
+  }
+}
+
+#### GET /api/surveys/:id
+Get single survey details
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": "survey-1",
+    "title": "IT Professional Work Satisfaction",
+    "description": "Understanding job satisfaction levels among IT professionals",
+    "category": "IT Sector",
+    "status": "active",
+    "questions": [
+      {
+        "id": "q1",
+        "type": "multiple_choice",
+        "question": "How satisfied are you with our product?",
+        "options": ["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"],
+        "required": true
+      }
+    ],
+    "audience": {
+      "ageGroups": ["25-34", "35-44"],
+      "genders": ["Male", "Female"],
+      "locations": ["United States"],
+      "industries": ["IT Sector"],
+      "targetCount": 500,
+      "dataSource": "default"
+    },
+    "responses": 320,
+    "target": 500,
+    "completionRate": 76,
+    "createdAt": "2023-06-15",
+    "updatedAt": "2023-06-20"
+  }
+}
+
+#### POST /api/surveys
+Create new survey
+
+Request Body:
+{
+  "title": "Customer Satisfaction Survey",
+  "description": "Understanding customer satisfaction with our product",
+  "category": "IT Sector",
+  "questions": [
+    {
+      "type": "multiple_choice",
+      "question": "How satisfied are you with our product?",
+      "options": ["Very Satisfied", "Satisfied", "Neutral", "Dissatisfied", "Very Dissatisfied"],
+      "required": true
+    }
+  ],
+  "audience": {
+    "ageGroups": ["25-34", "35-44"],
+    "genders": ["Male", "Female"],
+    "locations": ["United States"],
+    "industries": ["IT Sector"],
+    "targetCount": 500,
+    "dataSource": "default"
+  }
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": "survey-123",
+    "title": "Customer Satisfaction Survey",
+    "status": "draft",
+    "createdAt": "2023-06-21T10:30:00Z"
+  }
+}
+
+#### PUT /api/surveys/:id
+Update survey
+
+Request Body:
+{
+  "title": "Updated Survey Title",
+  "description": "Updated description",
+  "status": "active",
+  "questions": [
+    {
+      "id": "q1",
+      "type": "multiple_choice",
+      "question": "Updated question?",
+      "options": ["Option 1", "Option 2"],
+      "required": true
+    }
+  ]
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": "survey-123",
+    "updatedAt": "2023-06-21T11:00:00Z"
+  }
+}
+
+#### DELETE /api/surveys/:id
+Delete survey
+
+Response:
+{
+  "success": true,
+  "data": {
+    "message": "Survey deleted successfully"
+  }
+}
+
+#### POST /api/surveys/:id/duplicate
+Duplicate survey
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": "survey-124",
+    "title": "IT Professional Work Satisfaction (Copy)",
+    "createdAt": "2023-06-21T12:00:00Z"
+  }
+}
+
+#### POST /api/surveys/:id/send
+Send survey to audience
+
+Response:
+{
+  "success": true,
+  "data": {
+    "sentCount": 500,
+    "message": "Survey sent successfully to 500 recipients"
+  }
+}
+
+### 3. Survey Results APIs
+
+#### GET /api/surveys/:id/results
+Get survey results and analytics
+
+Response:
+{
+  "success": true,
+  "data": {
+    "survey": {
+      "id": "survey-1",
+      "title": "IT Professional Work Satisfaction",
+      "description": "Understanding job satisfaction levels among IT professionals",
+      "category": "IT Sector",
+      "createdAt": "2023-06-15"
+    },
+    "stats": {
+      "totalResponses": 320,
+      "completionRate": 76,
+      "avgTime": 4.2,
+      "npsScore": 42
+    },
+    "questionResults": [
+      {
+        "questionId": "q1",
+        "question": "How satisfied are you with your current role?",
+        "type": "multiple_choice",
+        "responses": 320,
+        "data": [
+          { "option": "Very Satisfied", "count": 96, "percentage": 30 },
+          { "option": "Satisfied", "count": 128, "percentage": 40 }
+        ]
+      }
+    ],
+    "demographics": {
+      "age": [
+        { "ageGroup": "18-24", "count": 48 },
+        { "ageGroup": "25-34", "count": 128 }
+      ],
+      "gender": [
+        { "gender": "Male", "count": 192 },
+        { "gender": "Female", "count": 112 }
+      ],
+      "location": [
+        { "location": "United States", "count": 160 },
+        { "location": "Canada", "count": 64 }
+      ]
+    },
+    "responseTimeline": [
+      { "date": "Jun 15", "responses": 45 },
+      { "date": "Jun 16", "responses": 62 }
+    ]
+  }
+}
+
+#### GET /api/surveys/:id/responses
+Get individual survey responses
+
+Query Parameters:
+- page: number (default: 1)
+- limit: number (default: 10)
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "R001",
+      "submittedAt": "2023-06-20T14:30:00Z",
+      "completionTime": 3.5,
+      "answers": [
+        {
+          "questionId": "q1",
+          "question": "How satisfied are you with your current role?",
+          "answer": "Satisfied"
+        }
+      ]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 10,
+    "total": 320,
+    "totalPages": 32
+  }
+}
+
+#### GET /api/surveys/:id/export
+Export survey data
+
+Query Parameters:
+- format: string (csv|excel|pdf|json)
+
+Response: Binary file download
+
+### 4. Audience APIs
+
+#### GET /api/audience
+Get audience members with pagination and filtering
+
+Query Parameters:
+- page: number (default: 1)
+- limit: number (default: 50)
+- search: string (optional)
+- ageGroup: string (optional)
+- gender: string (optional)
+- country: string (optional)
+- industry: string (optional)
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "AUD00001",
+      "firstName": "John",
+      "lastName": "Doe",
+      "email": "john.doe@email.com",
+      "phone": "+1-555-123-4567",
+      "ageGroup": "25-34",
+      "gender": "Male",
+      "city": "New York",
+      "state": "NY",
+      "country": "United States",
+      "industry": "IT Sector",
+      "jobTitle": "Software Engineer",
+      "education": "Bachelor's",
+      "income": "$75k-$100k",
+      "joinedDate": "2023-01-15",
+      "isActive": true,
+      "lastActivity": "2023-06-20",
+      "tags": ["IT Sector", "25-34", "Male"]
+    }
+  ],
+  "pagination": {
+    "page": 1,
+    "limit": 50,
+    "total": 10000,
+    "totalPages": 200
+  }
+}
+
+#### GET /api/audience/stats
+Get audience statistics
+
+Response:
+{
+  "success": true,
+  "data": {
+    "total": 10000,
+    "active": 9000,
+    "byAgeGroup": {
+      "18-24": 1500,
+      "25-34": 3000,
+      "35-44": 2500,
+      "45-54": 2000,
+      "55-64": 800,
+      "65+": 200
+    },
+    "byGender": {
+      "Male": 5200,
+      "Female": 4500,
+      "Non-binary": 200,
+      "Prefer not to say": 100
+    },
+    "byCountry": {
+      "United States": 6000,
+      "Canada": 1500,
+      "United Kingdom": 1200,
+      "Germany": 800,
+      "Australia": 500
+    },
+    "byIndustry": {
+      "IT Sector": 2000,
+      "Healthcare": 1500,
+      "Finance": 1200,
+      "Education": 1000,
+      "Retail": 800
+    }
+  }
+}
+
+#### POST /api/audience/import
+Import audience data from CSV/Excel file
+
+Request: multipart/form-data
+- file: File (CSV or Excel)
+
+Response:
+{
+  "success": true,
+  "data": {
+    "imported": 1500,
+    "skipped": 50,
+    "errors": [
+      "Row 25: Invalid email format",
+      "Row 67: Missing required field 'firstName'"
+    ]
+  }
+}
+
+#### GET /api/audience/export
+Export audience data
+
+Query Parameters:
+- format: string (csv|excel) (default: csv)
+- ageGroup: string (optional)
+- gender: string (optional)
+- country: string (optional)
+- industry: string (optional)
+
+Response: Binary file download
+
+#### POST /api/audience/segments
+Create audience segment
+
+Request Body:
+{
+  "name": "IT Professionals (25-44)",
+  "description": "Age 25-44, IT Sector, Active users",
+  "criteria": {
+    "ageGroups": ["25-34", "35-44"],
+    "genders": ["Male", "Female"],
+    "countries": ["United States"],
+    "industries": ["IT Sector"]
+  }
+}
+
+Response:
+{
+  "success": true,
+  "data": {
+    "id": "seg-123",
+    "name": "IT Professionals (25-44)",
+    "memberCount": 2847
+  }
+}
+
+#### GET /api/audience/segments
+Get all audience segments
+
+Response:
+{
+  "success": true,
+  "data": [
+    {
+      "id": "seg-1",
+      "name": "IT Professionals (25-44)",
+      "description": "Age 25-44, IT Sector, Active users",
+      "memberCount": 2847,
+      "createdAt": "2023-06-01T10:00:00Z"
+    }
+  ]
+}
+
+### 5. Categories API
+
+#### GET /api/categories
+Get all survey categories
+
+Response:
+{
+  "success": true,
+  "data": [
+    "IT Sector",
+    "Automotive",
+    "Healthcare",
+    "Education",
+    "Retail",
+    "Finance",
+    "Manufacturing",
+    "Entertainment",
+    "Food & Beverage",
+    "Travel & Tourism",
+    "Real Estate",
+    "Media",
+    "Sports",
+    "Technology",
+    "Energy"
+  ]
+}
+
+## Database Schema
+
+### Users Table
+- id: UUID (Primary Key)
+- email: VARCHAR(255) UNIQUE
+- password_hash: VARCHAR(255)
+- first_name: VARCHAR(100)
+- last_name: VARCHAR(100)
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+### Surveys Table
+- id: UUID (Primary Key)
+- user_id: UUID (Foreign Key)
+- title: VARCHAR(255)
+- description: TEXT
+- category: VARCHAR(100)
+- status: ENUM('draft', 'active', 'completed')
+- questions: JSON
+- audience_criteria: JSON
+- target_count: INTEGER
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+### Survey_Responses Table
+- id: UUID (Primary Key)
+- survey_id: UUID (Foreign Key)
+- audience_member_id: UUID (Foreign Key)
+- answers: JSON
+- completion_time: INTEGER (seconds)
+- submitted_at: TIMESTAMP
+- ip_address: VARCHAR(45)
+
+### Audience_Members Table
+- id: UUID (Primary Key)
+- user_id: UUID (Foreign Key)
+- first_name: VARCHAR(100)
+- last_name: VARCHAR(100)
+- email: VARCHAR(255)
+- phone: VARCHAR(20)
+- age_group: VARCHAR(10)
+- gender: VARCHAR(20)
+- city: VARCHAR(100)
+- state: VARCHAR(100)
+- country: VARCHAR(100)
+- industry: VARCHAR(100)
+- job_title: VARCHAR(100)
+- education: VARCHAR(100)
+- income: VARCHAR(50)
+- is_active: BOOLEAN
+- joined_date: DATE
+- last_activity: DATE
+- tags: JSON
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+### Audience_Segments Table
+- id: UUID (Primary Key)
+- user_id: UUID (Foreign Key)
+- name: VARCHAR(255)
+- description: TEXT
+- criteria: JSON
+- member_count: INTEGER
+- created_at: TIMESTAMP
+- updated_at: TIMESTAMP
+
+## Error Codes
+
+### Authentication Errors
+- AUTH_001: Invalid or missing token
+- AUTH_002: Token expired
+- AUTH_003: Insufficient permissions
+
+### Validation Errors
+- VAL_001: Missing required field
+- VAL_002: Invalid field format
+- VAL_003: Field value out of range
+
+### Resource Errors
+- RES_001: Resource not found
+- RES_002: Resource already exists
+- RES_003: Resource access denied
+
+### Server Errors
+- SRV_001: Internal server error
+- SRV_002: Database connection error
+- SRV_003: External service unavailable
+
+## Rate Limiting
+- 1000 requests per hour per user
+- 100 requests per minute per user
+- File uploads limited to 10MB
+
+## File Upload Requirements
+
+### Audience Import
+- Supported formats: CSV, Excel (.xlsx)
+- Maximum file size: 10MB
+- Required columns: firstName, lastName, email
+- Optional columns: phone, ageGroup, gender, city, state, country, industry, jobTitle, education, income
+
+### CSV Format Example:
