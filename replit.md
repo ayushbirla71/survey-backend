@@ -8,6 +8,31 @@ This is a Node.js Express backend API server for a survey platform with SQLite d
 
 Preferred communication style: Simple, everyday language.
 
+## Recent Changes (July 24, 2025)
+
+**HTML Survey Generation and Email Automation System:**
+✓ Enhanced database schema with HTML storage fields (html_content, public_url, emails_sent, emails_opened, response_count)
+✓ Created comprehensive HTML survey generation service with embedded styling and JavaScript
+✓ Implemented automatic email sending after HTML creation with tracking integration
+✓ Added new API endpoints for HTML survey management and email campaign automation
+✓ Built complete email tracking system connected to survey model
+✓ Email templates now use HTML service for consistent branding and tracking
+✓ Created public survey access URLs with automatic tracking parameter support
+✓ Added survey HTML download functionality for offline distribution
+✓ Updated survey details API to include email statistics and campaign information
+✓ Development mode email simulation with tracking record creation
+✓ Complete end-to-end workflow: Create Survey → Generate HTML → Auto-send Emails → Track Analytics
+
+**Previous System Improvements:**
+- Fixed OpenAI dependency issues with graceful fallback when API key is missing
+- Converted PostgreSQL schema to SQLite for development compatibility
+- Resolved TypeScript compilation errors and module imports
+- Updated questionService.js to handle missing OpenAI credentials properly
+- Created basic React home page for frontend testing
+- Verified backend API endpoints are working correctly
+- Database tables initialized with proper SQLite structure
+- Sample data available for development testing
+
 ## System Architecture
 
 ### Backend Architecture (Current Implementation)

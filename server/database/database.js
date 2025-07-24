@@ -36,6 +36,11 @@ const createTables = () => {
       questions TEXT NOT NULL,
       audience_criteria TEXT NOT NULL,
       target_count INTEGER NOT NULL,
+      html_content TEXT,
+      public_url TEXT,
+      emails_sent INTEGER DEFAULT 0,
+      emails_opened INTEGER DEFAULT 0,
+      response_count INTEGER DEFAULT 0,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
       FOREIGN KEY (user_id) REFERENCES users(id)
@@ -100,6 +105,60 @@ const createTables = () => {
     )
   `);
 
+  // Email Campaigns table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_campaigns (
+      id TEXT PRIMARY KEY,
+      survey_id TEXT NOT NULL,
+      user_id TEXT NOT NULL,
+      campaign_name TEXT NOT NULL,
+      recipient_count INTEGER NOT NULL,
+      sent_count INTEGER DEFAULT 0,
+      failed_count INTEGER DEFAULT 0,
+      opened_count INTEGER DEFAULT 0,
+      responded_count INTEGER DEFAULT 0,
+      status TEXT NOT NULL DEFAULT 'draft',
+      sent_at DATETIME,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (survey_id) REFERENCES surveys(id),
+      FOREIGN KEY (user_id) REFERENCES users(id)
+    )
+  `);
+
+  // Email Recipients table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS email_recipients (
+      id TEXT PRIMARY KEY,
+      campaign_id TEXT NOT NULL,
+      audience_member_id TEXT NOT NULL,
+      email TEXT NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      sent_at DATETIME,
+      opened_at DATETIME,
+      responded_at DATETIME,
+      error_message TEXT,
+      tracking_id TEXT NOT NULL,
+      FOREIGN KEY (campaign_id) REFERENCES email_campaigns(id),
+      FOREIGN KEY (audience_member_id) REFERENCES audience_members(id)
+    )
+  `);
+
+  // Survey Tracking table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS survey_tracking (
+      id TEXT PRIMARY KEY,
+      survey_id TEXT NOT NULL,
+      recipient_id TEXT,
+      tracking_id TEXT NOT NULL,
+      ip_address TEXT,
+      user_agent TEXT,
+      opened_at DATETIME,
+      responded_at DATETIME,
+      FOREIGN KEY (survey_id) REFERENCES surveys(id),
+      FOREIGN KEY (recipient_id) REFERENCES email_recipients(id)
+    )
+  `);
+
   // Create indexes for better performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_surveys_user_id ON surveys(user_id);
@@ -109,6 +168,12 @@ const createTables = () => {
     CREATE INDEX IF NOT EXISTS idx_audience_members_user_id ON audience_members(user_id);
     CREATE INDEX IF NOT EXISTS idx_audience_members_email ON audience_members(email);
     CREATE INDEX IF NOT EXISTS idx_audience_segments_user_id ON audience_segments(user_id);
+    CREATE INDEX IF NOT EXISTS idx_email_campaigns_survey_id ON email_campaigns(survey_id);
+    CREATE INDEX IF NOT EXISTS idx_email_campaigns_user_id ON email_campaigns(user_id);
+    CREATE INDEX IF NOT EXISTS idx_email_recipients_campaign_id ON email_recipients(campaign_id);
+    CREATE INDEX IF NOT EXISTS idx_email_recipients_tracking_id ON email_recipients(tracking_id);
+    CREATE INDEX IF NOT EXISTS idx_survey_tracking_survey_id ON survey_tracking(survey_id);
+    CREATE INDEX IF NOT EXISTS idx_survey_tracking_tracking_id ON survey_tracking(tracking_id);
   `);
 };
 

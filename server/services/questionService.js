@@ -4,12 +4,20 @@ import config from "../config.js";
 import dotenv from "dotenv";
 dotenv.config();
 
-// Initialize OpenAI client
+// Initialize OpenAI client conditionally
+let openai = null;
 
-console.log("open ai key", process.env.OPENAI_API_KEY);
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
-});
+console.log("open ai key", process.env.OPENAI_API_KEY ? "provided" : "not provided");
+
+if (process.env.OPENAI_API_KEY) {
+  try {
+    openai = new OpenAI({
+      apiKey: process.env.OPENAI_API_KEY,
+    });
+  } catch (error) {
+    console.warn("Failed to initialize OpenAI client:", error.message);
+  }
+}
 
 // Static question templates by category
 const staticQuestions = {
@@ -208,9 +216,12 @@ const staticQuestions = {
 async function generateQuestionsWithAI(
   category,
   description,
-  questionCount = 5
+  questionCount = 3
 ) {
   try {
+    if (!openai) {
+      throw new Error("OpenAI client not initialized - API key missing");
+    }
     const prompt = `Generate ${questionCount} survey questions for the "${category}" category.
     
 Additional context: ${description || "No additional context provided"}
@@ -308,7 +319,7 @@ async function generateQuestions(
 ) {
   const mode = config.questionGeneration.mode;
 
-  if (mode === "openai" && process.env.OPENAI_API_KEY) {
+  if (mode === "openai" && openai) {
     console.log(`Generating questions with AI for category: ${category}`);
     return await generateQuestionsWithAI(category, description, questionCount);
   } else {
@@ -325,8 +336,8 @@ function getAvailableCategories() {
 // Test OpenAI connection
 async function testOpenAIConnection() {
   try {
-    if (!process.env.OPENAI_API_KEY) {
-      return { connected: false, error: "No API key provided" };
+    if (!openai) {
+      return { connected: false, error: "OpenAI client not initialized - API key missing" };
     }
 
     const response = await openai.chat.completions.create({

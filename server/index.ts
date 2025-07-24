@@ -1,15 +1,15 @@
 import express, { type Request, Response, NextFunction } from "express";
 import { registerRoutes } from "./routes";
 import { setupVite, serveStatic, log } from "./vite";
-import { generateSampleData } from "./database/migrations";
-import dotenv from 'dotenv';
+import { generateSampleData } from "./database/migrations.js";
+import dotenv from "dotenv";
 dotenv.config();
 
 const app = express();
 
 // Increase payload limits for file uploads
-app.use(express.json({ limit: '10mb' }));
-app.use(express.urlencoded({ extended: false, limit: '10mb' }));
+app.use(express.json({ limit: "10mb" }));
+app.use(express.urlencoded({ extended: false, limit: "10mb" }));
 
 // Request logging middleware
 app.use((req, res, next) => {
@@ -44,12 +44,15 @@ app.use((req, res, next) => {
 
 (async () => {
   // Generate sample data for development
-  if (process.env.NODE_ENV === 'development') {
+  if (process.env.NODE_ENV === "development") {
     try {
       // generateSampleData();
-      log('Sample data initialized for development');
+      log("Sample data initialized for development");
     } catch (error) {
-      log('Sample data already exists or error occurred: ' + error.message);
+      log(
+        "Sample data already exists or error occurred: " +
+        (error as Error).message,
+      );
     }
   }
 
@@ -64,7 +67,7 @@ app.use((req, res, next) => {
     res.status(status).json({
       success: false,
       error: message,
-      code: 'SRV_001'
+      code: "SRV_001",
     });
   });
 

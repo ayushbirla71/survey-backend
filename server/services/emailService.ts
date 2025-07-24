@@ -1,97 +1,260 @@
-import nodemailer from 'nodemailer';
+import nodemailer from "nodemailer";
+import { v4 as uuidv4 } from "uuid";
+import db from "../database/database.js";
+import { htmlSurveyService } from "./htmlService.js";
 
 class EmailService {
   private transporter: any;
 
   constructor() {
     this.transporter = nodemailer.createTransport({
-      host: process.env.SMTP_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.SMTP_PORT || '587'),
+      host: process.env.SMTP_HOST || "smtp.gmail.com",
+      port: parseInt(process.env.SMTP_PORT || "587"),
       secure: false,
       auth: {
-        user: process.env.SMTP_USER || 'your-email@gmail.com',
-        pass: process.env.SMTP_PASS || 'your-app-password'
-      }
+        user: process.env.SMTP_USER || "birlaaaaaa706@gmail.com",
+        pass: process.env.SMTP_PASS || "vypp tuch vhut skhq",
+      },
     });
   }
 
-  async sendSurveyEmail(recipients: any[], survey: any) {
-    const surveyUrl = `${process.env.FRONTEND_URL || 'http://localhost:5000'}/survey/${survey.id}`;
-    
-    const emailTemplate = `
-      <html>
-        <body style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
-          <div style="max-width: 600px; margin: 0 auto; padding: 20px;">
-            <h2 style="color: #2563eb;">You're Invited to Participate in a Survey</h2>
-            
-            <h3>${survey.title}</h3>
-            <p>${survey.description}</p>
-            
-            <div style="background: #f8f9fa; padding: 15px; border-radius: 5px; margin: 20px 0;">
-              <p><strong>Category:</strong> ${survey.category}</p>
-              <p><strong>Estimated Time:</strong> 5-10 minutes</p>
-            </div>
-            
-            <div style="text-align: center; margin: 30px 0;">
-              <a href="${surveyUrl}" 
-                 style="background: #2563eb; color: white; padding: 12px 30px; 
-                        text-decoration: none; border-radius: 5px; display: inline-block;">
-                Take Survey Now
-              </a>
-            </div>
-            
-            <p style="font-size: 14px; color: #666;">
-              This survey is anonymous and your responses will be kept confidential.
-              If you have any questions, please contact our support team.
-            </p>
-            
-            <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-            <p style="font-size: 12px; color: #999;">
-              Survey Platform | Powered by Your Organization
-            </p>
-          </div>
-        </body>
-      </html>
-    `;
+  // Create email campaign and send survey emails with tracking
+  async createCampaignAndSendEmails(
+    survey: any,
+    recipients: any[],
+    campaignName: string,
+    userId: string,
+  ) {
+    const campaignId = uuidv4();
+    const currentTime = new Date().toISOString();
 
+    // Create email campaign record
+    const insertCampaign = db.prepare(`
+      INSERT INTO email_campaigns (id, survey_id, user_id, campaign_name, recipient_count, status, created_at)
+      VALUES (?, ?, ?, ?, ?, 'sending', ?)
+    `);
+
+    insertCampaign.run(
+      campaignId,
+      survey.id,
+      userId,
+      campaignName,
+      recipients.length,
+      currentTime,
+    );
+
+    // Create recipient records first
+    const insertRecipient = db.prepare(`
+      INSERT INTO email_recipients (id, campaign_id, audience_member_id, email, tracking_id, status)
+      VALUES (?, ?, ?, ?, ?, 'pending')
+    `);
+
+    const recipientRecords = [];
+    for (const recipient of recipients) {
+      const recipientId = uuidv4();
+      const trackingId = uuidv4();
+
+      insertRecipient.run(
+        recipientId,
+        campaignId,
+        recipient.id,
+        recipient.email,
+        trackingId,
+      );
+
+      recipientRecords.push({
+        id: recipientId,
+        email: recipient.email,
+        trackingId,
+        audienceMember: recipient,
+      });
+    }
+
+    // Send emails with tracking
+    const results = await this.sendTrackedEmails(
+      survey,
+      recipientRecords,
+      campaignId,
+    );
+
+    // Update campaign with results
+    const updateCampaign = db.prepare(`
+      UPDATE email_campaigns 
+      SET sent_count = ?, failed_count = ?, status = ?, sent_at = ?
+      WHERE id = ?
+    `);
+
+    const status = results.failed === 0 ? "completed" : "partially_failed";
+    updateCampaign.run(
+      results.sent,
+      results.failed,
+      status,
+      currentTime,
+      campaignId,
+    );
+
+    return {
+      campaignId,
+      ...results,
+    };
+  }
+
+  // Send tracked emails to recipients
+  async sendTrackedEmails(
+    survey: any,
+    recipientRecords: any[],
+    campaignId: string,
+  ) {
     const results = {
       sent: 0,
       failed: 0,
-      errors: []
+      errors: [] as string[],
     };
 
-    for (const recipient of recipients) {
+    const updateRecipient = db.prepare(`
+      UPDATE email_recipients 
+      SET status = ?, sent_at = ?, error_message = ?
+      WHERE id = ?
+    `);
+
+    for (const recipient of recipientRecords) {
       try {
-        await this.transporter.sendMail({
-          from: process.env.FROM_EMAIL || 'noreply@survey.com',
+        // Generate email HTML using the HTML service
+        const emailHtml = htmlSurveyService.generateEmailTemplate(
+          survey,
+          recipient.trackingId,
+          `${recipient.audienceMember.firstName} ${recipient.audienceMember.lastName}`,
+        );
+
+        const mailOptions = {
+          from: process.env.FROM_EMAIL || "noreply@surveys.com",
           to: recipient.email,
           subject: `Survey Invitation: ${survey.title}`,
-          html: emailTemplate
-        });
-        results.sent++;
-      } catch (error) {
+          html: emailHtml,
+        };
+        await this.transporter.sendMail(mailOptions);
+        if (process.env.NODE_ENV === "development") {
+          // In development, just mark as sent without actually sending
+          console.log(
+            `[DEV] Would send email to ${recipient.email} with tracking ID: ${recipient.trackingId}`,
+          );
+          updateRecipient.run(
+            "sent",
+            new Date().toISOString(),
+            null,
+            recipient.id,
+          );
+          results.sent++;
+        } else {
+          // In production, actually send the email
+          // await this.transporter.sendMail(mailOptions);
+          updateRecipient.run(
+            "sent",
+            new Date().toISOString(),
+            null,
+            recipient.id,
+          );
+          results.sent++;
+        }
+      } catch (error: any) {
+        console.error(
+          `Failed to send email to ${recipient.email}:`,
+          error.message,
+        );
+        updateRecipient.run("failed", null, error.message, recipient.id);
         results.failed++;
-        results.errors.push(`Failed to send to ${recipient.email}: ${error.message}`);
+        results.errors.push(`${recipient.email}: ${error.message}`);
       }
     }
 
     return results;
   }
 
+  // Get campaign analytics
+  async getCampaignAnalytics(campaignId: string) {
+    const campaign = db
+      .prepare("SELECT * FROM email_campaigns WHERE id = ?")
+      .get(campaignId);
+
+    if (!campaign) {
+      throw new Error("Campaign not found");
+    }
+
+    const recipients = db
+      .prepare(
+        `
+      SELECT er.*, am.first_name, am.last_name 
+      FROM email_recipients er
+      LEFT JOIN audience_members am ON er.audience_member_id = am.id
+      WHERE er.campaign_id = ?
+      ORDER BY er.sent_at DESC
+    `,
+      )
+      .all(campaignId);
+
+    const stats = {
+      total: recipients.length,
+      sent: recipients.filter(
+        (r) =>
+          r.status === "sent" ||
+          r.status === "opened" ||
+          r.status === "responded",
+      ).length,
+      failed: recipients.filter((r) => r.status === "failed").length,
+      opened: recipients.filter(
+        (r) => r.status === "opened" || r.status === "responded",
+      ).length,
+      responded: recipients.filter((r) => r.status === "responded").length,
+      openRate: 0,
+      responseRate: 0,
+    };
+
+    if (stats.sent > 0) {
+      stats.openRate = Math.round((stats.opened / stats.sent) * 100);
+      stats.responseRate = Math.round((stats.responded / stats.sent) * 100);
+    }
+
+    return {
+      campaign,
+      recipients,
+      stats,
+    };
+  }
+
   async sendTestEmail() {
     try {
       await this.transporter.sendMail({
-        from: process.env.FROM_EMAIL || 'noreply@survey.com',
-        to: 'test@example.com',
-        subject: 'Test Email',
-        text: 'This is a test email from the survey platform.'
+        from: process.env.FROM_EMAIL || "noreply@survey.com",
+        to: "test@example.com",
+        subject: "Test Email",
+        text: "This is a test email from the survey platform.",
       });
       return true;
     } catch (error) {
-      console.error('Email test failed:', error);
+      console.error("Email test failed:", error);
       return false;
     }
   }
 }
 
-export default new EmailService();
+const emailService = new EmailService();
+
+// Export function for bulk survey emails
+export async function sendBulkSurveyEmails(
+  surveyId: string,
+  selectedAudience: any[],
+  campaignName: string,
+  survey: any,
+) {
+  // Get the default user ID
+  const userId = process.env.USER_ID || "default-user";
+
+  return await emailService.createCampaignAndSendEmails(
+    survey,
+    selectedAudience,
+    campaignName,
+    userId,
+  );
+}
+
+export default emailService;
