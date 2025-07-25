@@ -325,7 +325,7 @@ export class HtmlSurveyService {
                         ← Previous
                     </button>
                     <div class="page-indicator" id="pageIndicator">
-                        Page 1 of 1
+                        Page 1 of ${Math.ceil(survey.questions.length / questionsPerPage)}
                     </div>
                     <button type="button" class="nav-btn primary" id="nextBtn" onclick="nextPage()">
                         Next →
@@ -597,9 +597,12 @@ export class HtmlSurveyService {
      * Generate HTML for multipage survey questions
      */
     private generateMultipageQuestionsHtml(questions: Survey["questions"], questionsPerPage: number): string {
-        if (questionsPerPage >= questions.length) {
-            // Single page - use original method
-            return this.generateQuestionsHtml(questions);
+        // Calculate total pages needed
+        const totalPages = Math.ceil(questions.length / questionsPerPage);
+        
+        // If only one page is needed, still create multipage structure for consistency
+        if (totalPages === 1) {
+            return `<div class="page active">${this.generateQuestionsHtml(questions)}</div>`;
         }
 
         const pages = [];

@@ -217,8 +217,8 @@ export class DatabaseStorage implements IStorage {
       survey.category,
       survey.status || "draft",
       JSON.stringify(survey.questions),
-      JSON.stringify(survey.audience),
-      survey.audience.targetCount,
+      JSON.stringify(survey.audience || {}),
+      survey.targetCount || 100,
       0, // emails_sent
       0, // emails_opened
       0, // response_count
@@ -268,10 +268,42 @@ export class DatabaseStorage implements IStorage {
   }
 
   async deleteSurvey(id: string) {
-    // Delete related responses first
-    db.prepare("DELETE FROM survey_responses WHERE survey_id = ?").run(id);
-    // Delete survey
-    db.prepare("DELETE FROM surveys WHERE id = ?").run(id);
+    try {
+      // Disable foreign key constraints temporarily
+      db.pragma('foreign_keys = OFF');
+      
+      // Delete survey responses first
+      db.prepare("DELETE FROM survey_responses WHERE survey_id = ?").run(id);
+      
+      // Delete from survey_tracking if exists
+      try {
+        db.prepare("DELETE FROM survey_tracking WHERE survey_id = ?").run(id);
+      } catch (e) { /* Table might not exist */ }
+      
+      // Delete from email_recipients if exists
+      try {
+        db.prepare("DELETE FROM email_recipients WHERE survey_id = ?").run(id);
+      } catch (e) { /* Table might not exist */ }
+      
+      // Delete from email_campaigns if exists
+      try {
+        db.prepare("DELETE FROM email_campaigns WHERE survey_id = ?").run(id);
+      } catch (e) { /* Table might not exist */ }
+      
+      // Finally delete the survey
+      const result = db.prepare("DELETE FROM surveys WHERE id = ?").run(id);
+      
+      // Re-enable foreign key constraints
+      db.pragma('foreign_keys = ON');
+      
+      if (result.changes === 0) {
+        throw new Error("Survey not found");
+      }
+    } catch (error) {
+      // Re-enable foreign key constraints on error
+      db.pragma('foreign_keys = ON');
+      throw error;
+    }
   }
 
   async duplicateSurvey(id: string) {
