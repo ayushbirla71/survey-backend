@@ -17,7 +17,7 @@ const generateSampleData = () => {
     "admin@survey.com",
     "hashed_password",
     "Admin",
-    "User",
+    "User"
   );
 
   // Generate sample audience members
@@ -198,7 +198,7 @@ const generateSampleData = () => {
       member.jobTitle,
       member.education,
       member.income,
-      JSON.stringify([member.industry, member.ageGroup, member.gender]),
+      JSON.stringify([member.industry, member.ageGroup, member.gender])
     );
   });
 
@@ -213,7 +213,7 @@ const generateSampleData = () => {
   const sampleQuestions = [
     {
       id: "q1",
-      type: "multiple_choice",
+      type: "single_choice",
       question: "How satisfied are you with your current role?",
       options: [
         "Very Satisfied",
@@ -244,7 +244,7 @@ const generateSampleData = () => {
     "active",
     JSON.stringify(sampleQuestions),
     JSON.stringify(audienceCriteria),
-    500,
+    500
   );
 
   console.log("Sample data generated successfully");

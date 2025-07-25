@@ -205,6 +205,26 @@ export class HtmlSurveyService {
             .question { padding: 20px; margin-bottom: 25px; }
             .submit-btn { padding: 14px 30px; min-width: 160px; }
         }
+              .thank-you {
+            display: none;
+            text-align: center;
+            padding: 80px 30px;
+        }
+
+        .thank-you h2 {
+            color: #7c3aed;
+            font-size: 2.5rem;
+            margin-bottom: 20px;
+            font-weight: 700;
+        }
+
+        .thank-you p {
+            font-size: 1.1rem;
+            color: #64748b;
+            max-width: 500px;
+            margin: 0 auto;
+            line-height: 1.6;
+        }
         ${customStyles}
     </style>
 </head>
@@ -234,6 +254,11 @@ export class HtmlSurveyService {
                     </div>
                 </div>
             </form>
+
+              <div class="thank-you" id="thank-you">
+                <h2>Thank You!</h2>
+                <p>Your response has been submitted successfully. We appreciate you taking the time to share your feedback with us.</p>
+            </div>
         </div>
     </div>
 
@@ -322,6 +347,7 @@ export class HtmlSurveyService {
                 
                 if (result.success) {
                     form.style.display = 'none';
+                     document.getElementById('thank-you').style.display = 'block';
                     successMessage.style.display = 'block';
                 } else {
                     throw new Error(result.error || 'Failed to submit survey');
@@ -352,13 +378,12 @@ export class HtmlSurveyService {
                 let optionsHtml = "";
 
                 switch (question.type) {
-                    case "multiple_choice":
+                    case "single_choice":
                         optionsHtml = `
             <div class="options">
-              ${
-                  question.options
-                      ?.map(
-                          (option) => `
+              ${question.options
+                                ?.map(
+                                    (option) => `
                 <div class="option">
                   <label>
                     <input type="radio" name="${questionId}" value="${this.escapeHtml(option)}" ${requiredAttr}>
@@ -366,9 +391,9 @@ export class HtmlSurveyService {
                   </label>
                 </div>
               `,
-                      )
-                      .join("") || ""
-              }
+                                )
+                                .join("") || ""
+                            }
             </div>
           `;
                         break;
@@ -396,8 +421,8 @@ export class HtmlSurveyService {
                         optionsHtml = `
             <div class="options">
               ${ratingOptions
-                  .map(
-                      (rating) => `
+                                .map(
+                                    (rating) => `
                 <div class="option">
                   <label>
                     <input type="radio" name="${questionId}" value="${this.escapeHtml(rating)}" ${requiredAttr}>
@@ -405,8 +430,8 @@ export class HtmlSurveyService {
                   </label>
                 </div>
               `,
-                  )
-                  .join("")}
+                                )
+                                .join("")}
             </div>
           `;
                         break;
@@ -501,15 +526,14 @@ export class HtmlSurveyService {
                                 We would like to invite you to participate in our survey: <strong>${this.escapeHtml(survey.title)}</strong>
                             </p>
                             
-                            ${
-                                survey.description
-                                    ? `
+                            ${survey.description
+                ? `
                             <p style="margin: 0 0 20px 0; font-size: 16px; color: #666; line-height: 1.6;">
                                 ${this.escapeHtml(survey.description)}
                             </p>
                             `
-                                    : ""
-                            }
+                : ""
+            }
                             
                             <p style="margin: 0 0 30px 0; font-size: 16px; color: #666; line-height: 1.6;">
                                 Your participation is voluntary and your responses will be kept confidential. The survey should take only a few minutes to complete.

@@ -26,7 +26,7 @@ if (process.env.OPENAI_API_KEY) {
 const staticQuestions = {
   "IT Sector": [
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "How satisfied are you with your current role?",
       options: [
         "Very Satisfied",
@@ -38,7 +38,7 @@ const staticQuestions = {
       required: true,
     },
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "What is your primary programming language?",
       options: ["JavaScript", "Python", "Java", "C#", "PHP", "Other"],
       required: false,
@@ -65,13 +65,13 @@ const staticQuestions = {
 
   Healthcare: [
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "How would you rate the quality of healthcare services?",
       options: ["Excellent", "Good", "Fair", "Poor", "Very Poor"],
       required: true,
     },
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "What is your primary concern about healthcare?",
       options: ["Cost", "Access", "Quality", "Wait Times", "Communication"],
       required: true,
@@ -99,13 +99,13 @@ const staticQuestions = {
 
   Education: [
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "How would you rate the quality of education?",
       options: ["Excellent", "Good", "Fair", "Poor", "Very Poor"],
       required: true,
     },
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "What is most important in education?",
       options: [
         "Practical Skills",
@@ -151,7 +151,7 @@ const staticQuestions = {
       required: true,
     },
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "What features stood out to you the most?",
       options: [
         "Design/appearance",
@@ -180,7 +180,7 @@ const staticQuestions = {
 
   Finance: [
     {
-      type: "multiple_choice",
+      type: "single_choice",
       question: "Overall, how satisfied are you with your experience with us?",
       options: [
         "Very satisfied",
@@ -221,8 +221,8 @@ async function generateQuestionsWithAI(
 Additional context: ${description || "No additional context provided"}
 
 Requirements:
-- Create diverse question types: multiple_choice, text, rating, yes_no
-- For multiple_choice questions, provide 3-5 relevant options
+- Create diverse question types: single_choice, text, rating, yes_no
+- For single_choice questions, provide 3-5 relevant options
 - For rating questions, use 1-5 scale with options ['1', '2', '3', '4', '5']
 - For yes_no questions, use options ['Yes', 'No']
 - For text questions, use empty options array []
@@ -233,7 +233,7 @@ Requirements:
 Respond with a JSON array of question objects in this exact format:
 [
   {
-    "type": "multiple_choice",
+    "type": "single_choice",
     "question": "Question text here?",
     "options": ["Option 1", "Option 2", "Option 3"],
     "required": true

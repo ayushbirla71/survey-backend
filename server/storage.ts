@@ -402,7 +402,7 @@ export class DatabaseStorage implements IStorage {
     const avgTime =
       responses.length > 0
         ? responses.reduce((sum, r) => sum + (r.completion_time || 0), 0) /
-          responses.length
+        responses.length
         : 0;
 
     // Process question results
@@ -415,7 +415,7 @@ export class DatabaseStorage implements IStorage {
         data: [],
       };
 
-      if (question.type === "multiple_choice" && question.options) {
+      if (question.type === "single_choice" && question.options) {
         const optionCounts = {};
         question.options.forEach((option) => (optionCounts[option] = 0));
 
@@ -827,8 +827,8 @@ export class DatabaseStorage implements IStorage {
     const avgResponseTime =
       responseTimes.length > 0
         ? responseTimes.reduce((sum, r) => sum + r.completion_time, 0) /
-          responseTimes.length /
-          60 // convert to minutes
+        responseTimes.length /
+        60 // convert to minutes
         : 0;
 
     return {

@@ -10,7 +10,7 @@ const config = {
       model: "gpt-4o", // the newest OpenAI model is "gpt-4o" which was released May 13, 2024. do not change this unless explicitly requested by the user
       maxQuestions: 10,
       temperature: 0.7,
-      questionTypes: ["multiple_choice", "text", "rating", "yes_no"],
+      questionTypes: ["single_choice", "text", "rating", "yes_no"],
     },
 
     // Static question settings (when mode is 'static')

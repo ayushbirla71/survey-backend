@@ -70,7 +70,7 @@ class FileService {
 
       jsonData.forEach((row, index) => {
         const rowNumber = index + 1;
-        
+
         try {
           // Validate required fields
           if (!row.firstName || !row.lastName || !row.email) {
@@ -113,7 +113,7 @@ class FileService {
 
   generateCSV(data, headers) {
     let csv = headers.join(',') + '\n';
-    
+
     data.forEach(row => {
       const values = headers.map(header => {
         const value = row[header] || '';
@@ -135,11 +135,11 @@ class FileService {
 
   generatePDF(surveyResults) {
     const doc = new jsPDF();
-    
+
     // Title
     doc.setFontSize(20);
     doc.text('Survey Results Report', 20, 30);
-    
+
     // Survey info
     doc.setFontSize(12);
     doc.text(`Survey: ${surveyResults.survey.title}`, 20, 50);
@@ -160,7 +160,7 @@ class FileService {
       doc.text(`Q${index + 1}: ${question.question}`, 20, yPosition);
       yPosition += 15;
 
-      if (question.type === 'multiple_choice' && question.data) {
+      if (question.type === 'single_choice' && question.data) {
         const tableData = question.data.map(item => [
           item.option,
           item.count.toString(),
