@@ -80,14 +80,14 @@ export class DatabaseStorage implements IStorage {
   // Helper method to handle different date formats
   private formatDate(dateValue: any): string {
     if (!dateValue) return new Date().toISOString().split("T")[0];
-    
+
     // If it's a number (Unix timestamp)
-    if (typeof dateValue === 'number') {
+    if (typeof dateValue === "number") {
       return new Date(dateValue).toISOString().split("T")[0];
     }
-    
+
     // If it's a string
-    if (typeof dateValue === 'string') {
+    if (typeof dateValue === "string") {
       // If it looks like a Unix timestamp string
       if (/^\d+$/.test(dateValue)) {
         return new Date(parseInt(dateValue)).toISOString().split("T")[0];
@@ -95,7 +95,7 @@ export class DatabaseStorage implements IStorage {
       // Otherwise treat as ISO date string
       return new Date(dateValue).toISOString().split("T")[0];
     }
-    
+
     return new Date().toISOString().split("T")[0];
   }
   // User methods
@@ -270,38 +270,44 @@ export class DatabaseStorage implements IStorage {
   async deleteSurvey(id: string) {
     try {
       // Disable foreign key constraints temporarily
-      db.pragma('foreign_keys = OFF');
-      
+      db.pragma("foreign_keys = OFF");
+
       // Delete survey responses first
       db.prepare("DELETE FROM survey_responses WHERE survey_id = ?").run(id);
-      
+
       // Delete from survey_tracking if exists
       try {
         db.prepare("DELETE FROM survey_tracking WHERE survey_id = ?").run(id);
-      } catch (e) { /* Table might not exist */ }
-      
+      } catch (e) {
+        /* Table might not exist */
+      }
+
       // Delete from email_recipients if exists
       try {
         db.prepare("DELETE FROM email_recipients WHERE survey_id = ?").run(id);
-      } catch (e) { /* Table might not exist */ }
-      
+      } catch (e) {
+        /* Table might not exist */
+      }
+
       // Delete from email_campaigns if exists
       try {
         db.prepare("DELETE FROM email_campaigns WHERE survey_id = ?").run(id);
-      } catch (e) { /* Table might not exist */ }
-      
+      } catch (e) {
+        /* Table might not exist */
+      }
+
       // Finally delete the survey
       const result = db.prepare("DELETE FROM surveys WHERE id = ?").run(id);
-      
+
       // Re-enable foreign key constraints
-      db.pragma('foreign_keys = ON');
-      
+      db.pragma("foreign_keys = ON");
+
       if (result.changes === 0) {
         throw new Error("Survey not found");
       }
     } catch (error) {
       // Re-enable foreign key constraints on error
-      db.pragma('foreign_keys = ON');
+      db.pragma("foreign_keys = ON");
       throw error;
     }
   }
@@ -452,11 +458,11 @@ export class DatabaseStorage implements IStorage {
     const totalResponses = responses.length;
 
     // Calculate stats
-    const avgTime =
-      responses.length > 0
-        ? responses.reduce((sum, r) => sum + (r.completion_time || 0), 0) /
-        responses.length
-        : 0;
+    const avgTime = 2;
+    // responses.length > 0
+    //   ? responses.reduce((sum, r) => sum + (r.completion_time || 0), 0) /
+    //   responses.length
+    //   : 0;
 
     // Process question results
     const questionResults = survey.questions.map((question) => {
@@ -880,8 +886,8 @@ export class DatabaseStorage implements IStorage {
     const avgResponseTime =
       responseTimes.length > 0
         ? responseTimes.reduce((sum, r) => sum + r.completion_time, 0) /
-        responseTimes.length /
-        60 // convert to minutes
+          responseTimes.length /
+          60 // convert to minutes
         : 0;
 
     return {

@@ -9,7 +9,7 @@ let openai = null;
 
 console.log(
   "open ai key",
-  process.env.OPENAI_API_KEY ? "provided" : "not provided"
+  process.env.OPENAI_API_KEY ? "provided" : "not provided",
 );
 
 if (process.env.OPENAI_API_KEY) {
@@ -138,20 +138,14 @@ const staticQuestions = {
 
   Retail: [
     {
-      type: "Single_choice",
+      type: "rating",
       question:
         "How appealing do you find this new product based on the description/images you saw?",
-      options: [
-        "Extremely appealing",
-        "Very appealing",
-        "Somewhat appealing",
-        "Not so appealing",
-        "Not at all appealing",
-      ],
+      options: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
       required: true,
     },
     {
-      type: "single_choice",
+      type: "checkbox",
       question: "What features stood out to you the most?",
       options: [
         "Design/appearance",
@@ -173,7 +167,7 @@ const staticQuestions = {
       type: "rating",
       question:
         "How likely are you to recommend this product to a friend or colleague?",
-      options: ["1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
+      options: ["0", "1", "2", "3", "4", "5", "6", "7", "8", "9", "10"],
       required: true,
     },
   ],
@@ -210,7 +204,7 @@ const staticQuestions = {
 async function generateQuestionsWithAI(
   category,
   description,
-  questionCount = 3
+  questionCount = 3,
 ) {
   try {
     if (!openai) {
@@ -309,7 +303,7 @@ function getStaticQuestions(category) {
 async function generateQuestions(
   category,
   description = "",
-  questionCount = 5
+  questionCount = 5,
 ) {
   const mode = config.questionGeneration.mode;
 

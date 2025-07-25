@@ -266,11 +266,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const csvData = results.questionResults.flatMap((q: any) =>
               q.data
                 ? q.data.map((item: any) => ({
-                  Question: q.question,
-                  Answer: item.option,
-                  Count: item.count,
-                  Percentage: `${item.percentage}%`,
-                }))
+                    Question: q.question,
+                    Answer: item.option,
+                    Count: item.count,
+                    Percentage: `${item.percentage}%`,
+                  }))
                 : [],
             );
             fileBuffer = Buffer.from(
@@ -284,11 +284,11 @@ export async function registerRoutes(app: Express): Promise<Server> {
             const excelData = results.questionResults.flatMap((q: any) =>
               q.data
                 ? q.data.map((item: any) => ({
-                  Question: q.question,
-                  Answer: item.option,
-                  Count: item.count,
-                  Percentage: `${item.percentage}%`,
-                }))
+                    Question: q.question,
+                    Answer: item.option,
+                    Count: item.count,
+                    Percentage: `${item.percentage}%`,
+                  }))
                 : [],
             );
             fileBuffer = fileService.generateExcel(excelData, "Survey Results");
@@ -821,11 +821,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
         );
 
         // Generate HTML content with multipage options
-        const {
-          questionsPerPage = 3,
-          enableProgressIndicator = true,
-        } = req.body;
-        
+        const { questionsPerPage = 3, enableProgressIndicator = true } =
+          req.body;
+
         const htmlContent = htmlSurveyService.generateSurveyHtml(survey, {
           questionsPerPage,
           enableProgressIndicator,
@@ -848,124 +846,44 @@ export async function registerRoutes(app: Express): Promise<Server> {
         let emailResult = null;
         const selectedAudience = [
           {
-            "id": "a3fdb0a5-337e-46cc-b07c-690dc81f674b",
-            "firstName": "Ayush",
-            "lastName": "Birla",
-            "email": "Ayushbirla71@gmail.com",
-            "phone": "+91-9876543210",
-            "ageGroup": "25-34",
-            "gender": "Male",
-            "city": "Indore",
-            "state": "Madhya Pradesh",
-            "country": "India",
-            "industry": "IT Sector",
-            "jobTitle": "Software Engineer",
-            "education": "Bachelor's",
-            "income": "₹6L–₹10L",
-            "joinedDate": "2025-07-24 16:18:07",
-            "isActive": 1,
-            "lastActivity": null,
-            "tags": [
-              "IT Sector",
-              "25-34",
-              "Male"
-            ]
+            id: "a3fdb0a5-337e-46cc-b07c-690dc81f674b",
+            firstName: "Ayush",
+            lastName: "Birla",
+            email: "Ayushbirla71@gmail.com",
+            phone: "+91-9876543210",
+            ageGroup: "25-34",
+            gender: "Male",
+            city: "Indore",
+            state: "Madhya Pradesh",
+            country: "India",
+            industry: "IT Sector",
+            jobTitle: "Software Engineer",
+            education: "Bachelor's",
+            income: "₹6L–₹10L",
+            joinedDate: "2025-07-24 16:18:07",
+            isActive: 1,
+            lastActivity: null,
+            tags: ["IT Sector", "25-34", "Male"],
           },
           {
-            "id": "8c62a341-3522-44e9-bd7a-1220bd0d5ea9",
-            "firstName": "Priya",
-            "lastName": "Mehra",
-            "email": "priya.mehra@example.com",
-            "phone": "+91-9812345678",
-            "ageGroup": "18-24",
-            "gender": "Female",
-            "city": "Delhi",
-            "state": "Delhi",
-            "country": "India",
-            "industry": "Education",
-            "jobTitle": "Student",
-            "education": "Bachelor's (Pursuing)",
-            "income": "₹0–₹1L",
-            "joinedDate": "2025-07-24 16:18:07",
-            "isActive": 1,
-            "lastActivity": null,
-            "tags": [
-              "Education",
-              "18-24",
-              "Female"
-            ]
-          },
-          {
-            "id": "06544a98-acce-4228-81cb-257f7c0b6d5e",
-            "firstName": "Ravi",
-            "lastName": "Kumar",
-            "email": "ravi.kumar@xyz.com",
-            "phone": "+91-9900112233",
-            "ageGroup": "35-44",
-            "gender": "Male",
-            "city": "Patna",
-            "state": "Bihar",
-            "country": "India",
-            "industry": "Government",
-            "jobTitle": "Bank Manager",
-            "education": "Master's",
-            "income": "₹10L–₹15L",
-            "joinedDate": "2025-07-24 16:18:07",
-            "isActive": 1,
-            "lastActivity": null,
-            "tags": [
-              "Government",
-              "35-44",
-              "Male"
-            ]
-          },
-          {
-            "id": "cb022f7f-d841-4879-9e56-06369493fb94",
-            "firstName": "Neha",
-            "lastName": "Sharma",
-            "email": "neha.sharma@email.in",
-            "phone": "+91-8888777766",
-            "ageGroup": "25-34",
-            "gender": "Female",
-            "city": "Mumbai",
-            "state": "Maharashtra",
-            "country": "India",
-            "industry": "Finance",
-            "jobTitle": "Chartered Accountant",
-            "education": "CA",
-            "income": "₹12L–₹18L",
-            "joinedDate": "2025-07-24 16:18:07",
-            "isActive": 1,
-            "lastActivity": null,
-            "tags": [
-              "Finance",
-              "25-34",
-              "Female"
-            ]
-          },
-          {
-            "id": "e7868e94-9545-4aa1-82ef-cdf7bc09f121",
-            "firstName": "Arjun",
-            "lastName": "Reddy",
-            "email": "arjun.reddy@example.in",
-            "phone": "+91-9988776655",
-            "ageGroup": "25-34",
-            "gender": "Male",
-            "city": "Hyderabad",
-            "state": "Telangana",
-            "country": "India",
-            "industry": "Healthcare",
-            "jobTitle": "Dentist",
-            "education": "BDS",
-            "income": "₹8L–₹12L",
-            "joinedDate": "2025-07-24 16:18:07",
-            "isActive": 1,
-            "lastActivity": null,
-            "tags": [
-              "Healthcare",
-              "25-34",
-              "Male"
-            ]
+            id: "8c62a341-3522-44e9-bd7a-1220bd0d5ea9",
+            firstName: "Ananth",
+            lastName: "PVS",
+            email: "Ananth@demokrito.com",
+            phone: "+91-9812345678",
+            ageGroup: "18-24",
+            gender: "Female",
+            city: "Delhi",
+            state: "Delhi",
+            country: "India",
+            industry: "Education",
+            jobTitle: "Student",
+            education: "Bachelor's (Pursuing)",
+            income: "₹0–₹1L",
+            joinedDate: "2025-07-24 16:18:07",
+            isActive: 1,
+            lastActivity: null,
+            tags: ["Education", "18-24", "Female"],
           },
         ];
         if (autoSendEmails && selectedAudience && selectedAudience.length > 0) {
