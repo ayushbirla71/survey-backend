@@ -77,6 +77,27 @@ export interface IStorage {
 }
 
 export class DatabaseStorage implements IStorage {
+  // Helper method to handle different date formats
+  private formatDate(dateValue: any): string {
+    if (!dateValue) return new Date().toISOString().split("T")[0];
+    
+    // If it's a number (Unix timestamp)
+    if (typeof dateValue === 'number') {
+      return new Date(dateValue).toISOString().split("T")[0];
+    }
+    
+    // If it's a string
+    if (typeof dateValue === 'string') {
+      // If it looks like a Unix timestamp string
+      if (/^\d+$/.test(dateValue)) {
+        return new Date(parseInt(dateValue)).toISOString().split("T")[0];
+      }
+      // Otherwise treat as ISO date string
+      return new Date(dateValue).toISOString().split("T")[0];
+    }
+    
+    return new Date().toISOString().split("T")[0];
+  }
   // User methods
   async getUser(id: string) {
     const stmt = db.prepare("SELECT * FROM users WHERE id = ?");
@@ -900,12 +921,12 @@ export class DatabaseStorage implements IStorage {
       )
       .all();
 
-    return surveys.map((survey) => {
+    return surveys.map((survey: any) => {
       const responseCount = db
         .prepare(
           "SELECT COUNT(*) as count FROM survey_responses WHERE survey_id = ?",
         )
-        .get(survey.id);
+        .get(survey.id) as any;
       const completionRate =
         survey.target_count > 0
           ? Math.round((responseCount.count / survey.target_count) * 100)
@@ -918,32 +939,13 @@ export class DatabaseStorage implements IStorage {
         responses: responseCount.count,
         target: survey.target_count,
         completionRate,
-        createdAt: survey.created_at.split("T")[0], // Format date
+        createdAt: this.formatDate(survey.created_at),
         status: survey.status,
       };
     });
   }
 
-  // Categories
-  async getCategories() {
-    return [
-      "IT Sector",
-      "Automotive",
-      "Healthcare",
-      "Education",
-      "Retail",
-      "Finance",
-      "Manufacturing",
-      "Entertainment",
-      "Food & Beverage",
-      "Travel & Tourism",
-      "Real Estate",
-      "Media",
-      "Sports",
-      "Technology",
-      "Energy",
-    ];
-  }
+  // Categories (implemented at bottom to avoid duplication)
   // Email campaign methods
   async getEmailCampaigns(surveyId?: string) {
     let query = "SELECT * FROM email_campaigns";
