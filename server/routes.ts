@@ -820,8 +820,16 @@ export async function registerRoutes(app: Express): Promise<Server> {
           "./services/emailService.js"
         );
 
-        // Generate HTML content
-        const htmlContent = htmlSurveyService.generateSurveyHtml(survey);
+        // Generate HTML content with multipage options
+        const {
+          questionsPerPage = 3,
+          enableProgressIndicator = true,
+        } = req.body;
+        
+        const htmlContent = htmlSurveyService.generateSurveyHtml(survey, {
+          questionsPerPage,
+          enableProgressIndicator,
+        });
 
         // Store HTML in database
         const htmlResult = await storage.createSurveyHtml(

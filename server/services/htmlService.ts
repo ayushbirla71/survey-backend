@@ -17,11 +17,13 @@ interface HtmlGenerationOptions {
     trackingId?: string;
     customStyles?: string;
     submitUrl?: string;
+    questionsPerPage?: number;
+    enableProgressIndicator?: boolean;
 }
 
 export class HtmlSurveyService {
     /**
-     * Generate HTML content for a survey
+     * Generate HTML content for a survey with multipage support
      */
     generateSurveyHtml(
         survey: Survey,
@@ -32,6 +34,8 @@ export class HtmlSurveyService {
             trackingId = "",
             customStyles = "",
             submitUrl = `/api/public/survey/${survey.id}/submit`,
+            questionsPerPage = 3,
+            enableProgressIndicator = true,
         } = options;
 
         const trackingParams =
@@ -63,6 +67,40 @@ export class HtmlSurveyService {
             border-radius: 12px; 
             box-shadow: 0 4px 20px rgba(0,0,0,0.1);
             overflow: hidden;
+        }
+        .progress-container {
+            background: #f8f9fa;
+            padding: 20px 30px;
+            border-bottom: 1px solid #e9ecef;
+        }
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin-bottom: 10px;
+        }
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+            border-radius: 4px;
+            transition: width 0.3s ease;
+            width: 0%;
+        }
+        .progress-text {
+            font-size: 0.9em;
+            color: #666;
+            text-align: center;
+        }
+        .page {
+            display: none;
+        }
+        .page.active {
+            display: block;
+        }
+        .page:first-child {
+            display: block;
         }
         .header { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -143,6 +181,46 @@ export class HtmlSurveyService {
             margin-top: 40px; 
             padding-top: 30px; 
             border-top: 2px solid #f1f3f4;
+        }
+        .navigation-buttons {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 30px;
+            padding-top: 20px;
+        }
+        .nav-btn {
+            background: #6c757d;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 6px;
+            font-size: 1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            min-width: 120px;
+        }
+        .nav-btn:hover:not(:disabled) {
+            background: #5a6268;
+            transform: translateY(-1px);
+        }
+        .nav-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none;
+        }
+        .nav-btn.primary {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        }
+        .nav-btn.primary:hover:not(:disabled) {
+            background: linear-gradient(135deg, #5a6fd8 0%, #6a4190 100%);
+        }
+        .page-indicator {
+            font-size: 0.9em;
+            color: #666;
+            display: flex;
+            align-items: center;
+            gap: 8px;
         }
         .submit-btn { 
             background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -236,11 +314,25 @@ export class HtmlSurveyService {
             ${survey.description ? `<p>${this.escapeHtml(survey.description)}</p>` : ""}
         </div>
         
+        ${enableProgressIndicator ? this.generateProgressIndicator() : ""}
+        
         <div class="content">
             <form id="surveyForm" method="POST" action="${submitUrl}${trackingParams}">
-                ${this.generateQuestionsHtml(survey.questions)}
+                ${this.generateMultipageQuestionsHtml(survey.questions, questionsPerPage)}
                 
-                <div class="submit-section">
+                <div class="navigation-buttons" id="navigationButtons">
+                    <button type="button" class="nav-btn" id="prevBtn" onclick="previousPage()" disabled>
+                        ← Previous
+                    </button>
+                    <div class="page-indicator" id="pageIndicator">
+                        Page 1 of 1
+                    </div>
+                    <button type="button" class="nav-btn primary" id="nextBtn" onclick="nextPage()">
+                        Next →
+                    </button>
+                </div>
+                
+                <div class="submit-section" id="submitSection" style="display: none;">
                     <button type="submit" class="submit-btn" id="submitBtn">
                         Submit Survey
                     </button>
@@ -269,6 +361,129 @@ export class HtmlSurveyService {
         const errorMessage = document.getElementById('errorMessage');
         const successMessage = document.getElementById('successMessage');
         const startTime = Date.now();
+        
+        // Multipage navigation variables
+        let currentPage = 0;
+        const pages = document.querySelectorAll('.page');
+        const totalPages = pages.length;
+        const prevBtn = document.getElementById('prevBtn');
+        const nextBtn = document.getElementById('nextBtn');
+        const pageIndicator = document.getElementById('pageIndicator');
+        const navigationButtons = document.getElementById('navigationButtons');
+        const submitSection = document.getElementById('submitSection');
+        const progressFill = document.querySelector('.progress-fill');
+        const progressText = document.querySelector('.progress-text');
+        
+        // Initialize multipage survey
+        function initializeMultipage() {
+            if (totalPages <= 1) {
+                navigationButtons.style.display = 'none';
+                submitSection.style.display = 'block';
+                return;
+            }
+            
+            updatePageDisplay();
+            updateProgressIndicator();
+        }
+        
+        // Update page display and navigation
+        function updatePageDisplay() {
+            pages.forEach((page, index) => {
+                page.classList.toggle('active', index === currentPage);
+            });
+            
+            prevBtn.disabled = currentPage === 0;
+            
+            if (currentPage === totalPages - 1) {
+                nextBtn.style.display = 'none';
+                submitSection.style.display = 'block';
+            } else {
+                nextBtn.style.display = 'block';
+                nextBtn.textContent = 'Next →';
+                submitSection.style.display = 'none';
+            }
+            
+            pageIndicator.textContent = \`Page \${currentPage + 1} of \${totalPages}\`;
+        }
+        
+        // Update progress indicator
+        function updateProgressIndicator() {
+            if (progressFill && progressText) {
+                const progress = ((currentPage + 1) / totalPages) * 100;
+                progressFill.style.width = progress + '%';
+                progressText.textContent = \`\${Math.round(progress)}% Complete - Step \${currentPage + 1} of \${totalPages}\`;
+            }
+        }
+        
+        // Navigate to next page
+        function nextPage() {
+            if (!validateCurrentPage()) return;
+            
+            if (currentPage < totalPages - 1) {
+                currentPage++;
+                updatePageDisplay();
+                updateProgressIndicator();
+                scrollToTop();
+            }
+        }
+        
+        // Navigate to previous page
+        function previousPage() {
+            if (currentPage > 0) {
+                currentPage--;
+                updatePageDisplay();
+                updateProgressIndicator();
+                scrollToTop();
+            }
+        }
+        
+        // Validate current page before navigation
+        function validateCurrentPage() {
+            const currentPageElement = pages[currentPage];
+            const requiredFields = currentPageElement.querySelectorAll('input[required], textarea[required]');
+            let isValid = true;
+            
+            requiredFields.forEach(field => {
+                const errorEl = field.closest('.question').querySelector('.error');
+                
+                if (field.type === 'radio') {
+                    const name = field.name;
+                    const radios = currentPageElement.querySelectorAll(\`input[name="\${name}"]:checked\`);
+                    if (radios.length === 0) {
+                        isValid = false;
+                        errorEl.style.display = 'block';
+                        errorEl.textContent = 'This field is required';
+                    } else {
+                        errorEl.style.display = 'none';
+                    }
+                } else if (!field.value.trim()) {
+                    isValid = false;
+                    errorEl.style.display = 'block';
+                    errorEl.textContent = 'This field is required';
+                } else {
+                    errorEl.style.display = 'none';
+                }
+            });
+            
+            return isValid;
+        }
+        
+        // Scroll to top of survey
+        function scrollToTop() {
+            document.querySelector('.container').scrollIntoView({ 
+                behavior: 'smooth', 
+                block: 'start' 
+            });
+        }
+        
+        // Initialize on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            initializeMultipage();
+        });
+        
+        // Make functions global for onclick handlers
+        window.nextPage = nextPage;
+        window.previousPage = previousPage;
 
         form.addEventListener('submit', async function(e) {
             e.preventDefault();
@@ -363,6 +578,41 @@ export class HtmlSurveyService {
     </script>
 </body>
 </html>`;
+    }
+
+    /**
+     * Generate progress indicator HTML
+     */
+    private generateProgressIndicator(): string {
+        return `
+        <div class="progress-container">
+            <div class="progress-bar">
+                <div class="progress-fill"></div>
+            </div>
+            <div class="progress-text">0% Complete - Step 1 of 1</div>
+        </div>`;
+    }
+
+    /**
+     * Generate HTML for multipage survey questions
+     */
+    private generateMultipageQuestionsHtml(questions: Survey["questions"], questionsPerPage: number): string {
+        if (questionsPerPage >= questions.length) {
+            // Single page - use original method
+            return this.generateQuestionsHtml(questions);
+        }
+
+        const pages = [];
+        for (let i = 0; i < questions.length; i += questionsPerPage) {
+            const pageQuestions = questions.slice(i, i + questionsPerPage);
+            const pageHtml = `
+            <div class="page ${i === 0 ? 'active' : ''}">
+                ${this.generateQuestionsHtml(pageQuestions)}
+            </div>`;
+            pages.push(pageHtml);
+        }
+
+        return pages.join('');
     }
 
     /**
